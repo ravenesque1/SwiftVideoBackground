@@ -13,7 +13,7 @@ import UIKit
 public class VideoBackground {
     /// Singleton that can play one video on one `UIView` at a time.
     public static let shared = VideoBackground()
-
+    
     /// Change this `CGFloat` to adjust the darkness of the video. Value `0` to `1`. Higher numbers are darker. Setting
     /// to an invalid value does nothing.
     public var darkness: CGFloat = 0 {
@@ -23,28 +23,28 @@ public class VideoBackground {
             }
         }
     }
-
+    
     /// Change this `Bool` to mute/unmute the video.
     public var isMuted = true {
         didSet {
             playerLayer.player?.isMuted = isMuted
         }
     }
-
+    
     /// Change this `Bool` to set whether the video restarts when it ends.
     public var willLoopVideo = true
-
+    
     /// The `AVPlayerLayer` that can be accessed for advanced customization.
     public lazy var playerLayer = AVPlayerLayer()
-
+    
     private lazy var darknessOverlayView = UIView()
-
+    
     private var applicationWillEnterForegroundObserver: NSObjectProtocol?
-
+    
     private var playerItemDidPlayToEndObserver: NSObjectProtocol?
-
+    
     private var viewBoundsObserver: NSKeyValueObservation?
-
+    
     /// You only need to initialize your own instance of `VideoBackground` if you are playing multiple videos on
     /// multiple `UIViews`. Otherwise just use the `shared` singleton.
     public init() {
@@ -56,7 +56,7 @@ public class VideoBackground {
                 self?.playerLayer.player?.play()
         }
     }
-
+    
     /// Plays a local video.
     ///
     /// - Parameters:
@@ -90,7 +90,7 @@ public class VideoBackground {
             setAudioSessionAmbient: setAudioSessionAmbient
         )
     }
-
+    
     /// Plays a video from a local or remote URL.
     ///
     /// - Parameters:
@@ -110,7 +110,7 @@ public class VideoBackground {
                      willLoopVideo: Bool = true,
                      setAudioSessionAmbient: Bool = true) {
         cleanUp()
-
+        
         if setAudioSessionAmbient {
             if #available(iOS 10.0, *) {
                 try? AVAudioSession.sharedInstance().setCategory(
@@ -120,20 +120,54 @@ public class VideoBackground {
                 try? AVAudioSession.sharedInstance().setActive(true)
             }
         }
-
+        
         self.willLoopVideo = willLoopVideo
-
+        
         let player = AVPlayer(url: url)
+        play(view: view, player: player)
+    }
+    
+    /// Plays a video from a local or remote URL.
+    ///
+    /// - Parameters:
+    ///     - view: UIView that the video will be played on.
+    ///     - player: an AVPlayer containing the video to be played.
+    ///     - darkness: CGFloat between 0 and 1. The higher the value, the darker the video. Defaults to 0.
+    ///     - isMuted: Bool indicating whether video is muted. Defaults to true.
+    ///     - willLoopVideo: Bool indicating whether video should restart when finished. Defaults to true.
+    ///     - setAudioSessionAmbient: Bool indicating whether to set the shared `AVAudioSession` to ambient. If this is
+    ///         not done, audio played from your app will pause other audio playing on the device. Defaults to true.
+    ///         Only has an effect in iOS 10.0+.
+    public func play(view: UIView,
+                     player: AVPlayer,
+                     darkness: CGFloat = 0,
+                     isMuted: Bool = true,
+                     willLoopVideo: Bool = true,
+                     setAudioSessionAmbient: Bool = true) {
+        cleanUp()
+        
+        if setAudioSessionAmbient {
+            if #available(iOS 10.0, *) {
+                try? AVAudioSession.sharedInstance().setCategory(
+                    AVAudioSessionCategoryAmbient,
+                    mode: AVAudioSessionModeDefault
+                )
+                try? AVAudioSession.sharedInstance().setActive(true)
+            }
+        }
+        
+        self.willLoopVideo = willLoopVideo
+        
         player.actionAtItemEnd = .none
         player.isMuted = isMuted
         player.play()
-
+        
         playerLayer = AVPlayerLayer(player: player)
         playerLayer.frame = view.bounds
         playerLayer.videoGravity = .resizeAspectFill
         playerLayer.zPosition = -1
         view.layer.insertSublayer(playerLayer, at: 0)
-
+        
         darknessOverlayView = UIView(frame: view.bounds)
         darknessOverlayView.alpha = 0
         darknessOverlayView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
@@ -141,7 +175,7 @@ public class VideoBackground {
         self.darkness = darkness
         view.addSubview(darknessOverlayView)
         view.sendSubviewToBack(darknessOverlayView)
-
+        
         // Restart video when it ends
         playerItemDidPlayToEndObserver = NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
@@ -151,7 +185,7 @@ public class VideoBackground {
                     self?.restart()
                 }
         }
-
+        
         // Adjust frames upon device rotation
         viewBoundsObserver = view.layer.observe(\.bounds) { [weak self] view, _ in
             DispatchQueue.main.async {
@@ -159,23 +193,23 @@ public class VideoBackground {
             }
         }
     }
-
+    
     /// Pauses the video.
     public func pause() {
         playerLayer.player?.pause()
     }
-
+    
     /// Resumes the video.
     public func resume() {
         playerLayer.player?.play()
     }
-
+    
     /// Restarts the video from the beginning.
     public func restart() {
         playerLayer.player?.seek(to: CMTime.zero)
         playerLayer.player?.play()
     }
-
+    
     private func cleanUp() {
         playerLayer.player = nil
         darknessOverlayView.removeFromSuperview()
@@ -184,7 +218,7 @@ public class VideoBackground {
         }
         viewBoundsObserver?.invalidate()
     }
-
+    
     deinit {
         cleanUp()
         if let applicationWillEnterForegroundObserver = applicationWillEnterForegroundObserver {
