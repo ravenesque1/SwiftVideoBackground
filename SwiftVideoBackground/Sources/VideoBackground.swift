@@ -50,7 +50,7 @@ public class VideoBackground {
     public init() {
         // Resume video when application re-enters foreground
         applicationWillEnterForegroundObserver = NotificationCenter.default.addObserver(
-            forName: UIApplication.willEnterForegroundNotification,
+            forName: NSNotification.Name.UIApplicationWillEnterForeground,
             object: nil,
             queue: .main) { [weak self] _ in
                 self?.playerLayer.player?.play()
@@ -114,8 +114,8 @@ public class VideoBackground {
         if setAudioSessionAmbient {
             if #available(iOS 10.0, *) {
                 try? AVAudioSession.sharedInstance().setCategory(
-                    AVAudioSession.Category.ambient,
-                    mode: AVAudioSession.Mode.default
+                    AVAudioSessionCategoryAmbient,
+                    mode: AVAudioSessionModeDefault
                 )
                 try? AVAudioSession.sharedInstance().setActive(true)
             }
@@ -149,8 +149,8 @@ public class VideoBackground {
         if setAudioSessionAmbient {
             if #available(iOS 10.0, *) {
                 try? AVAudioSession.sharedInstance().setCategory(
-                    AVAudioSession.Category.ambient,
-                    mode: AVAudioSession.Mode.default
+                    AVAudioSessionCategoryAmbient,
+                    mode: AVAudioSessionModeDefault
                 )
                 try? AVAudioSession.sharedInstance().setActive(true)
             }
@@ -174,7 +174,7 @@ public class VideoBackground {
         darknessOverlayView.backgroundColor = .black
         self.darkness = darkness
         view.addSubview(darknessOverlayView)
-        view.sendSubviewToBack(darknessOverlayView)
+        view.sendSubview(toBack: darknessOverlayView)
         
         // Restart video when it ends
         playerItemDidPlayToEndObserver = NotificationCenter.default.addObserver(
@@ -206,7 +206,7 @@ public class VideoBackground {
     
     /// Restarts the video from the beginning.
     public func restart() {
-        playerLayer.player?.seek(to: CMTime.zero)
+        playerLayer.player?.seek(to: kCMTimeZero)
         playerLayer.player?.play()
     }
     
