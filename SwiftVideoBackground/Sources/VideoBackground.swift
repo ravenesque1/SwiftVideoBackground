@@ -149,8 +149,8 @@ public class VideoBackground {
         if setAudioSessionAmbient {
             if #available(iOS 10.0, *) {
                 try? AVAudioSession.sharedInstance().setCategory(
-                    AVAudioSessionCategoryAmbient,
-                    mode: AVAudioSessionModeDefault
+                    AVAudioSession.Category.ambient,
+                    mode: AVAudioSession.Mode.default
                 )
                 try? AVAudioSession.sharedInstance().setActive(true)
             }
@@ -164,7 +164,7 @@ public class VideoBackground {
         
         playerLayer = AVPlayerLayer(player: player)
         playerLayer.frame = view.bounds
-        playerLayer.videoGravity = .resizeAspectFill
+        playerLayer.videoGravity = AVLayerVideoGravity.resizeAspect
         playerLayer.zPosition = -1
         view.layer.insertSublayer(playerLayer, at: 0)
         
