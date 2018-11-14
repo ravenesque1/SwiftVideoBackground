@@ -122,9 +122,9 @@ public class VideoBackground {
         }
         
         self.willLoopVideo = willLoopVideo
-        
         let player = AVPlayer(url: url)
-        play(view: view, player: player)
+        
+        setPlayer(player, view: view, darkness: darkness, isMuted: isMuted)
     }
     
     /// Plays a video from a local or remote URL.
@@ -139,7 +139,9 @@ public class VideoBackground {
     ///         not done, audio played from your app will pause other audio playing on the device. Defaults to true.
     ///         Only has an effect in iOS 10.0+.
     public func play(view: UIView,
-                     player: AVPlayer,
+                     url: URL,
+                     start: Int64,
+                     end: Int64,
                      darkness: CGFloat = 0,
                      isMuted: Bool = true,
                      willLoopVideo: Bool = true,
@@ -158,13 +160,24 @@ public class VideoBackground {
         
         self.willLoopVideo = willLoopVideo
         
+        let item = AVPlayerItem(url: url)
+        let player = AVPlayer(playerItem: item)
+        
+        player.seek(to: CMTimeMake(start, 1))
+        item.forwardPlaybackEndTime = CMTimeMake(end, 1)
+        
+        setPlayer(player, view: view, darkness: darkness, isMuted: isMuted)
+    }
+    
+    private func setPlayer(_ player: AVPlayer, view: UIView, darkness: CGFloat, isMuted: Bool) {
+        
         player.actionAtItemEnd = .none
         player.isMuted = isMuted
         player.play()
         
         playerLayer = AVPlayerLayer(player: player)
         playerLayer.frame = view.bounds
-        playerLayer.videoGravity = AVLayerVideoGravity.resizeAspect
+        playerLayer.videoGravity = .resizeAspectFill
         playerLayer.zPosition = -1
         view.layer.insertSublayer(playerLayer, at: 0)
         
